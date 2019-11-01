@@ -27,4 +27,4 @@ If your browser has API tester like talend, you can use method "Post" url http:/
 in body to test the API.
 
 Here is the page design
-![image](http://github.com/panzerk/PS1909/raw/master/20.png)
+![image](http://github.com/panzerk/PS1909/raw/master/20.PNG)
