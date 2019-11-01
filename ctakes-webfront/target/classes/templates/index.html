@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>cTakes Analysis</title>
+<link rel="stylesheet" href="/static/layui/css/layui.css">
+<script src="../static/jquery-3.3.1.min.js"></script>
+</head>
+<style>
+.replyFileid {
+	width: 100%;
+	position: absolute;
+	overflow: hidden;
+	right: 0;
+	top: 0;
+	filter: alpha(opacity = 0);
+	-moz-opacity: 0;
+	-khtml-opacity: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+
+body {
+	background-color: #f2f2f2;
+}
+
+.layui-elem-field {
+	background-color: white;
+	max-width: 70%;
+}
+
+.layui-elem-field legend {
+	width: 100%;
+	background-color: #f2f2f2;
+	margin-left: 0px;
+}
+</style>
+<body>
+	<fieldset class="layui-elem-field layui-field-title"
+		style="max-width: 100%; margin-top: 0px; background-color: white;">
+		<div
+			style="display: inline-block; font-size: 24px; position: relative; left: 10%;">
+			<span>PS1909</span>
+		</div>
+		<div style="display: inline-block; position: relative; left: 20%;">
+			<span id="Analysis" onclick="javascript:showAnalysis()">Analysis</span>
+		</div>
+		<div style="display: inline-block; position: relative; left: 30%;">
+			<span id="History" onclick="javascript:showHistory()">History</span>
+		</div>
+	</fieldset>
+
+	<div id="analysisDiv">
+		<form class="layui-form" action="/" method="post">
+
+			<div style="display: none;">
+				<input type="text" name="text" id="text">
+			</div>
+
+			<div class="layui-form-item layui-form-text" style="max-width: 80%;">
+				<div class="layui-input-block"
+					style="margin-left: 12.5%; display: flex;">
+					<textarea cols=100 rows=10 id="analysisText"
+						placeholder="Enter sentencs" class="layui-textarea"
+						onKeyUp="javascript:checkWord(this);"
+						onMouseDown="javascript:checkWord(this);"></textarea>
+					<div>
+						<label
+							style="position: absolute; font-family: Georgia; font-size: 26px; display: block; bottom: 10px;"
+							id="wordCheck">0</label>
+					</div>
+
+				</div>
+
+			</div>
+			<div class="layui-form-item" style="margin-left:10%">
+				<div class="layui-row">
+					<div class="layui-col-xs3">
+						<div class="layui-input-block" style="display: inline-block">
+						<a href="javascript:void(0);" class="layui-btn">&nbsp;&nbsp;Load &nbsp;&nbsp;<input
+								class="replyFileid" name="file" id="file" type="file"
+								multiple="multiple" onchange="load(this);" />
+							</a>
+						
+							
+						</div>
+					</div>
+					<div class="layui-col-xs3">
+						<div class="layui-input-block" style="display: inline-block">
+							<button class="layui-btn" lay-submit="" lay-filter="anaBtn">Analyze</button>
+						</div>
+					</div>
+					<div class="layui-col-xs3">
+						<div class="layui-input-block" style="display: inline-block">
+							<button class="layui-btn" lay-submit="" lay-filter="download">Download</button>
+						</div>
+					</div>
+				</div>
+
+
+
+			</div>
+		</form>
+
+		<fieldset class="layui-elem-field"
+			style="margin-left: 10%; background-color: white;">
+			<legend>Highlighted words</legend>
+			<br>
+			<div id="underline" class="layui-text" style="height: 210px"></div>
+
+		</fieldset>
+		<!-- <fieldset class="layui-elem-field" style="margin-left:10%;">
+        <legend>pos result</legend>
+        <textarea id="posResult" class="layui-textarea" style="display: flex;"></textarea>
+
+    </fieldset> -->
+
+		<fieldset class="layui-elem-field" style="margin-left: 10%;">
+			<div class="layui-card-body">
+				Note:Red:AnatomicalSite Green:Procedure Yellow: Disorder Pink:Finding
+			</div>
+
+		</fieldset>
+		<fieldset class="layui-elem-field"
+			style="margin-left: 10%; width: 80%; height: 210px">
+			<legend>cTakes Result</legend>
+			<div id="ctakesResult" class="layui-text" style="height: 210px;overflow-x: auto; overflow-y: auto;">
+				<table class="layui-hide" id="demo"
+					lay-data="{height: 'full-200', cellMinWidth: 80, page: true, limit:5}"
+					style="height: 210px">
+				</table>
+			</div>
+		</fieldset>
+		<br> <br>
+	</div>
+	<div id="historyDiv" style="display: none;">
+		<table class="layui-show" id="followTable" lay-filter="followTable"
+			style="width: 80%"></table>
+	</div>
+	<div style="display: none">
+		<form id="downloadForm" method="post" action="/download">
+			<input id="text11" name="text">
+		</form>
+	</div>
+	
+	<script src="/static/layui/layui.js"></script>
+	<script>
+	var t, c, p; 
+
+    function showAnalysis() {
+        document.getElementById("analysisDiv").removeAttribute("style")
+        document.getElementById("historyDiv").setAttribute("style", "display: none;")
+    }
+
+    function showHistory() {
+        document.getElementById("historyDiv").removeAttribute("style")
+        document.getElementById("historyDiv").setAttribute("style", "width: 80%;margin-left: 10%;")
+        document.getElementById("analysisDiv").setAttribute("style", "display: none;")
+    }
+    layui.use('table', function(){
+    	  var table = layui.table;
+    	  
+    	  table.render({
+    	    elem: '#test'
+    	    ,url:''
+    	    ,cellMinWidth: 80 
+    	    ,cols: [[
+    	      {field:'text', width:200, title: 'Text', sort: true}
+    	      ,{field:'category',width:200, title: 'category'}
+    	      ,{field:'part', width:200, title: 'Part Of Speech', sort: true}
+    	    ]]
+    	  });
+    	});
+    layui.use(['element', 'table'], function () {
+        var $ = layui.jquery,
+            element = layui.element, 
+            table = layui.table;
+        table.render({
+            elem: "#followTable",
+            url: '/AnalyzeResult',
+            skin: 'line',
+            page: false,
+            cols: [[
+                {field: "analyzeType", title: "analyzeType",width:150},
+                {field: "createTime", title: "createTime", width: 150},
+                {field: "analyzeText", title: "analyzeText", width: 350},
+                {field: "analyzeResult", title: "analyzeResult", width: 450},
+            ]],
+            done: function (res, curr, count) {
+                table = res.data;
+            }
+        })
+    })
+
+    var maxstrlen = 160;
+
+    function Q(s) {
+        return document.getElementById(s);
+    }
+
+    function checkWord(c) {
+
+        len = maxstrlen;
+
+        var str = c.value;
+
+        myLen = getStrleng(str);
+
+        var wck = Q("wordCheck");
+
+        wck.innerHTML = myLen
+
+    }
+
+    function getStrleng(str) {
+
+        myLen = 0;
+
+        i = 0;
+
+        for (; (i < str.length) && (myLen <= maxstrlen * 2); i++) {
+
+            if (str.charCodeAt(i) > 0 && str.charCodeAt(i) < 128)
+
+                myLen++;
+
+            else
+
+                myLen += 2;
+
+        }
+
+        return myLen;
+
+    }
+
+    /*layui.use('upload', function () {
+        var upload = layui.upload;
+        $ = layui.jquery;
+        var uploadInst = upload.render({
+            elem: "#upload",
+            url: '/upload',
+            accept: 'file',
+            done: function (res) {
+                
+                
+                //$("#analysisText").val(res)
+            }
+        })
+    })*/
+
+    layui.use(['form'], function () {
+        var form = layui.form
+            , layer = layui.layer
+            , $ = layui.jquery;
+        
+        form.on('submit(anaBtn)', function (data) {
+            $.post({
+                url: "/ctakes",
+                type: "post",
+                contentType: 'application/json',
+                dataType: "json",
+                data: JSON.stringify({
+                    analysisText: $("#analysisText").val()
+                }),
+                success: function (data) {
+
+                	 $("#ctakes").html(JSON.stringify(data));
+                     //console.log(JSON.stringify(data))
+                	var te = underLine(JSON.stringify(data)); //hightlight or underline
+                   	var category = getCategory(JSON.stringify(data), te)
+                    $.post({
+                        url: "/pos",
+                        type: "post",
+                        contentType: 'application/json',
+                        dataType: "json",
+                        data: JSON.stringify({
+                            analysisText: $("#analysisText").val()
+                        }),
+                        success: function (data) {
+                            //var jsonPretty = JSON.stringify(JSON.parse(text),null,2);
+                            //$("#posResult").html(JSON.stringify(data));
+                            
+                            var part = getPart(JSON.stringify(data), te)
+                           
+                            drawTable(te, category, part)
+                           //	console.log(JSON.stringify(data))
+                        },
+                        error: function (data) {
+                            layer.msg("Fail to analyze part of speech");
+                        }
+                    });
+                },
+                error: function (data) {
+                    layer.msg("Fail to analyze ctake");
+                }
+            });
+
+            return false;
+        });
+
+        form.on('submit(download)', function (data) {
+            // $.post({
+            //     url: "/download/",
+            //     type: "post",
+            //     contentType: "application/json",
+            //     data: JSON.stringify({
+            //         text: $("#ctakesResult").val()
+            //     })
+            // });
+
+            $("#text11").val(JSON.stringify(t))
+            
+            $("#downloadForm").submit();
+            return false
+        })
+    })
+    function underLine(obj){
+    	//console.log(obj)
+    	var data = JSON.stringify(obj).split(/[\""\n,\\:{ }\[|\]]/);
+    	data = data.filter(function(e){return e});
+    	//console.log(data)
+    	var te = [] //defien words array
+    	var tui = [] //define tui array
+    	var j = -1;
+    	for(var i = 0; i < data.length; i++){ //a text may refer multiple tuis
+    		if(data[i] == "tui"){
+    			tui[j] = data[i+1];
+    			i+=2;
+    		}else if(data[i] == "text"){
+    			j++;
+    			te[j] = data[i+1];
+    			i+=2;
+    		}
+    	}
+    	//console.log(te);
+    	//console.log(tui)
+    	
+    	var str = $("#analysisText").val();
+    	var a = "<b style = 'text-decoration: underline;text-decoration-color: red;'>" + te[0] +"</b>&nbsp;";
+    	//str = str.replace(new RegExp(te[2],'g'),a)
+    	//console.log(typeof(te[0]))
+    	//console.log(str)
+    	for(var i = 0; i < te.length; i++){
+    		switch(tui[i] ){
+    		case "T021":
+    		case "T022":
+    		case "T023":
+    		case "T024":
+    		case "T025":
+    		case "T026":
+    		case "T029":
+    		case "T030":
+    		case "T_AS":a = "<b style = 'text-decoration: underline;text-decoration-color: red;'>" + te[i] +"</b>&nbsp;";str = str.replace(new RegExp(te[i],'g'), a);break;
+    		
+    		case "T059":
+    		case "T060":
+    		case "T061": 
+    		case "T_PR":a = "<b style = 'text-decoration: underline;text-decoration-color: yellow;'>" + te[i] +"</b>&nbsp;";  str = str.replace(new RegExp(te[i],'g'), a);console.log(str);break;
+    		
+    		case "T019":
+    		case "T020": 
+    		case "T037": 
+    		case "T046":
+    		case "T047": 
+    		case "T048":
+    		case "T049": 
+    		case "T050":
+    		case "T190": 
+    		case "T_DD":a = "<b style = 'text-decoration: underline;text-decoration-color: green;'>" + te[i] +"</b>&nbsp;";  str = str.replace(new RegExp(te[i],'g'), a);break;
+    		case "T033": 
+    		case "T034":
+    		case "T040": 
+    		case "T041": 
+    		case "T042": 
+    		case "T043": 
+    		case "T044": 
+    		case "T045": 
+    		case "T046":
+    		case "T056":
+    		case "T057":
+    		case "T184": 
+    		case "T_SS":a = "<b style = 'text-decoration: underline;text-decoration-color: pink;'>" + te[i] +"</b>&nbsp;";  str = str.replace(new RegExp(te[i],'g'), a);break;
+    		}
+    	}
+    	//console.log(str)
+    	$("#underline").html(str);
+    	return te; 
+    }
+    
+    //get category
+    function getCategory(obj, te){
+    	var data = obj.split(/ |_|[|]|\"/)
+    	var tes = [...new Set(te)] //delete repeated words
+    	//console.log(data)
+    	var category = ["AnatomicalSiteMention","MedicationMention","DrugChangeStatusAnnotation","StrengthAnnotation","FractionStrengthAnnotation","FrequencyUnitAnnotation","DiseaseDisorderMention","SignSymptomMention","DateAnnotation","RouteAnnotation","MeasurementAnnotation","ProcedureMention","TimeMention","StrengthUnitAnnotation"];
+		var categorys = [];
+		var j = 0;
+		var k = 0;
+		var flag; 
+    	for(var i = 0; i < data.length; i++){
+    		//console.log(data[i])
+    		if(data [i] == category[j]){
+    			flag = category[j];
+    		}else if(j+1 < category.length && data[i] == category[j + 1]){
+    			j++;
+    			flag = category[j];
+    		}
+    		
+    		if(data[i] == tes[k]){
+    			categorys[k] = flag;
+    			k++;
+    		}
+    	}
+		return categorys;
+		//console.log(categorys)
+    }
+    
+    
+	function getPart(obj, te){
+    	//console.log(obj)
+		var data = obj.split(/ |_|[|]|\"/)
+		var tes = [...new Set(te)] 
+		var part = [];
+		var j = 1; 
+		var index = 0;
+		//console.log(data)
+		//console.log(tes)
+		for(var i = 1; i < data.length - 1; i+=2){
+			for(j = 0; j < tes.length; j++ ){
+				var result, str = data[i], k = 0;
+				  while(k < str.length) { 
+					  if(!((str[k] >= 'a' &&str[k] <= 'z') || (str[k] >= 'A' &&str[k] <= 'Z'))){
+						  str = str.replace(str[k], ''); 
+					  }
+				    k++; 
+				  } //delete non-alphanumeric character
+				  //console.log(str)
+				if(str == tes[j]){
+					part[index++] = data[i + 1];
+					break;
+				}
+			}
+			
+		}
+		//console.log(part)
+		return part;
+		//console.log(data)
+    }
+    
+    //draw table of ctakes result
+    function drawTable(te, category, part){
+    	var text = [...new Set(te)] //delete words that repeat
+    	var tableData = [];
+    	tableData["text"] = [];
+    	tableData["category"] = [];
+    	tableData["part"] = [];
+    	for(var i = 0; i < text.length; i++){
+    		var json1 = {};
+    		json1.text = text[i];
+    		json1.category = category[i];
+    		json1.part = part[i];
+        	tableData.push(json1);
+       	 }
+    	//console.log(tableData)
+    	 
+    		  layui.use('table', function(){
+    			  var table = layui.table;
+    			  
+    			  //show result
+    			  table.render({
+					text: {
+					none: 'Nothing' 
+                     },
+    			    elem: '#demo'
+    			    ,cols: [[ //title bar
+    			      {field: 'text', title: 'Text', width: 200, sort: true}
+    			      ,{field: 'category', title: 'Category', width: 200}
+    			      ,{field: 'part', title: 'Part Of Speech', minWidth: 150}
+    			    ]]
+    			    ,data: tableData
+    			    //,skin: 'line' //style of table
+    			    //,even: true
+    			    //,page: true //show pages or not
+    			    //,limits: [5, 7, 10]
+    			    //,limit: 5 //only show default elements 
+    			  });
+    			});
+    	t = tableData;
+    	
+    }
+    //Read a file
+    function load(input) {  
+            //Supprot Chrome
+            if (window.FileReader) {  
+                var file = input.files[0];  
+                filename = file.name.split(".")[0];  
+                var reader = new FileReader();  
+                var at = document.getElementById("analysisText");
+                reader.onload = function() {  
+                	at.value = this.result;
+                    //console.log(this.result);  
+                }  
+                reader.readAsText(file);  
+            }   
+            //Support Firefox
+            else if (document.implementation && document.implementation.createDocument) {   
+                var xmlDoc;   
+                xmlDoc = document.implementation.createDocument("", "", null);   
+                xmlDoc.async = false;   
+                xmlDoc.load(input.value);   
+                //console.log(xmlDoc.xml);  
+            } else {   
+                alert('error');   
+            }   
+        }  
+</script>
+</body>
+</html>
